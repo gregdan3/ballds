@@ -1,4 +1,5 @@
 extern crate piston_window;
+extern crate rand;
 
 use piston_window::*;
 use rand::prelude::*;
@@ -12,38 +13,34 @@ struct Ball {
     color: [f32; 4],
 }
 
+fn gen_ball(balls: &mut Vec<Ball>, pos: [f64; 2]) {
+    let mut rng = rand::thread_rng();
+    let radius = rng.gen_range(10.0..50.0);
+    let x_vel = rng.gen_range(-50.0..50.0);
+    let y_vel = rng.gen_range(-50.0..50.0);
+    let color = [
+        rng.gen_range(0.0..1.0),
+        rng.gen_range(0.0..1.0),
+        rng.gen_range(0.0..1.0),
+        1.0,
+    ];
+    balls.push(Ball {
+        x_pos: pos[0],
+        y_pos: pos[1],
+        x_vel,
+        y_vel,
+        radius,
+        color,
+    });
+}
+
 fn main() {
     let mut window: PistonWindow = WindowSettings::new("Bouncing Balls", [640, 480])
         .exit_on_esc(true)
         .build()
         .unwrap();
-
-    let mut balls = vec![
-        Ball {
-            x_pos: 50.0,
-            y_pos: 50.0,
-            x_vel: 15.0,
-            y_vel: 15.0,
-            radius: 25.0,
-            color: [1.0, 1.0, 1.0, 1.0], // white
-        },
-        Ball {
-            x_pos: 200.0,
-            y_pos: 100.0,
-            x_vel: -10.0,
-            y_vel: 5.0,
-            radius: 40.0,
-            color: [1.0, 0.0, 0.0, 1.0], // red
-        },
-        Ball {
-            x_pos: 300.0,
-            y_pos: 250.0,
-            x_vel: 8.0,
-            y_vel: -12.0,
-            radius: 20.0,
-            color: [0.0, 1.0, 0.0, 1.0], // green
-        },
-    ];
+    let mut balls: Vec<Ball> = vec![];
+    let mut last_mouse_pos: [f64; 2] = [0.0, 0.0];
 
     while let Some(event) = window.next() {
         if let Some(_) = event.render_args() {
@@ -64,6 +61,16 @@ fn main() {
                     );
                 }
             });
+        }
+
+        if let Some(pos) = event.mouse_cursor_args() {
+            last_mouse_pos = pos;
+        } else {
+            println!("No mouse position data");
+        }
+
+        if let Some(Button::Mouse(MouseButton::Left)) = event.press_args() {
+            gen_ball(&mut balls, last_mouse_pos)
         }
 
         if let Some(update) = event.update_args() {
