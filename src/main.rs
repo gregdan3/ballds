@@ -34,22 +34,54 @@ fn gen_ball(pos: [f64; 2]) -> Ball {
     }
 }
 
-fn update_balls(balls: &mut Vec<Ball>, dt: f64, window_width: f64, window_height: f64) {
-    for ball in balls {
-        ball.x_pos += ball.x_vel * dt;
-        ball.y_pos += ball.y_vel * dt;
+fn move_ball_by_vel(ball: &mut Ball, dt: f64) {
+    ball.x_pos += ball.x_vel * dt;
+    ball.y_pos += ball.y_vel * dt;
+}
 
-        if ball.x_pos + ball.radius > window_width || ball.x_pos - ball.radius < 0.0 {
-            ball.x_vel = -ball.x_vel;
-        }
+fn try_bump_balls(ball: &mut Ball, other: &mut Ball) {
+    // Calculate the angle of the collision
+    let distance = ((ball.x_pos - other.x_pos).powi(2) + (ball.y_pos - other.y_pos).powi(2)).sqrt();
 
-        if ball.y_pos + ball.radius > window_height || ball.y_pos - ball.radius < 0.0 {
-            ball.y_vel = -ball.y_vel;
-        }
+    if distance <= ball.radius + other.radius {
+        let angle = (ball.y_pos - other.y_pos).atan2(ball.x_pos - other.x_pos);
+
+        // Swap velocities
+        let tmp_x_vel = ball.x_vel;
+        let tmp_y_vel = ball.y_vel;
+
+        ball.x_vel = other.x_vel * angle.cos() + other.y_vel * angle.sin();
+        ball.y_vel = other.y_vel * angle.cos() - other.x_vel * angle.sin();
+
+        other.x_vel = tmp_x_vel * angle.cos() - tmp_y_vel * angle.sin();
+        other.y_vel = tmp_y_vel * angle.cos() + tmp_x_vel * angle.sin();
+    }
+}
+fn try_bump_walls(ball: &mut Ball, window_width: f64, window_height: f64) {
+    if ball.x_pos + ball.radius > window_width || ball.x_pos - ball.radius < 0.0 {
+        ball.x_vel = -ball.x_vel;
+    }
+
+    if ball.y_pos + ball.radius > window_height || ball.y_pos - ball.radius < 0.0 {
+        ball.y_vel = -ball.y_vel;
     }
 }
 
-fn render_balls(balls: &Vec<Ball>, window: &mut PistonWindow, event: &Event) {
+fn update_balls(balls: &mut [Box<Ball>], dt: f64, window_width: f64, window_height: f64) {
+    let l = balls.len();
+
+    for i in 0..l {
+        let (left, right) = balls.split_at_mut(i + 1);
+        let ball = &mut *left[i];
+        move_ball_by_vel(ball, dt);
+        for other in right {
+            try_bump_balls(ball, other);
+        }
+        try_bump_walls(ball, window_width, window_height)
+    }
+}
+
+fn render_balls(balls: &[Box<Ball>], window: &mut PistonWindow, event: &Event) {
     window.draw_2d(event, |context, graphics, _device| {
         clear([0.0, 0.0, 0.0, 1.0], graphics);
 
@@ -74,7 +106,7 @@ fn main() {
         .exit_on_esc(true)
         .build()
         .unwrap();
-    let mut balls: Vec<Ball> = vec![];
+    let mut balls: Vec<Box<Ball>> = vec![];
     let mut last_mouse_pos: [f64; 2] = [0.0, 0.0];
 
     while let Some(event) = window.next() {
@@ -87,7 +119,7 @@ fn main() {
         }
 
         if let Some(Button::Mouse(MouseButton::Left)) = event.press_args() {
-            let ball = gen_ball(last_mouse_pos);
+            let ball = Box::new(gen_ball(last_mouse_pos));
             balls.push(ball);
         }
 
