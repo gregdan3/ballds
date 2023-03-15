@@ -72,12 +72,20 @@ fn try_bump_balls(ball: &mut Ball, other: &mut Ball) {
 }
 
 fn try_bump_walls(ball: &mut Ball, window_width: f64, window_height: f64) {
-    if ball.x_pos + ball.radius > window_width || ball.x_pos - ball.radius < 0.0 {
+    if ball.x_pos + ball.radius > window_width {
         ball.x_vel = -ball.x_vel;
+        ball.x_pos = window_width - ball.radius;
+    } else if ball.x_pos - ball.radius < 0.0 {
+        ball.x_vel = -ball.x_vel;
+        ball.x_pos = ball.radius;
     }
 
-    if ball.y_pos + ball.radius > window_height || ball.y_pos - ball.radius < 0.0 {
+    if ball.y_pos + ball.radius > window_height {
         ball.y_vel = -ball.y_vel;
+        ball.y_pos = window_height - ball.radius;
+    } else if ball.y_pos - ball.radius < 0.0 {
+        ball.y_vel = -ball.y_vel;
+        ball.y_pos = ball.radius;
     }
 }
 
