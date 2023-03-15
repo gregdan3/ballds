@@ -40,21 +40,22 @@ fn move_ball_by_vel(ball: &mut Ball, dt: f64) {
 }
 
 fn try_bump_balls(ball: &mut Ball, other: &mut Ball) {
-    // Calculate the angle of the collision
     let distance = ((ball.x_pos - other.x_pos).powi(2) + (ball.y_pos - other.y_pos).powi(2)).sqrt();
 
     if distance <= ball.radius + other.radius {
-        let angle = (ball.y_pos - other.y_pos).atan2(ball.x_pos - other.x_pos);
+        // mass proportional to volume (radius^2)
+        let m1 = std::f64::consts::PI * ball.radius.powi(2);
+        let m2 = std::f64::consts::PI * other.radius.powi(2);
 
-        // Swap velocities
-        let tmp_x_vel = ball.x_vel;
-        let tmp_y_vel = ball.y_vel;
+        let vx_ball = ball.x_vel;
+        let vy_ball = ball.y_vel;
+        let vx_other = other.x_vel;
+        let vy_other = other.y_vel;
 
-        ball.x_vel = other.x_vel * angle.cos() + other.y_vel * angle.sin();
-        ball.y_vel = other.y_vel * angle.cos() - other.x_vel * angle.sin();
-
-        other.x_vel = tmp_x_vel * angle.cos() - tmp_y_vel * angle.sin();
-        other.y_vel = tmp_y_vel * angle.cos() + tmp_x_vel * angle.sin();
+        ball.x_vel = ((m1 - m2) * vx_ball + 2.0 * m2 * vx_other) / (m1 + m2);
+        ball.y_vel = ((m1 - m2) * vy_ball + 2.0 * m2 * vy_other) / (m1 + m2);
+        other.x_vel = ((m2 - m1) * vx_other + 2.0 * m1 * vx_ball) / (m1 + m2);
+        other.y_vel = ((m2 - m1) * vy_other + 2.0 * m1 * vy_ball) / (m1 + m2);
     }
 }
 fn try_bump_walls(ball: &mut Ball, window_width: f64, window_height: f64) {
