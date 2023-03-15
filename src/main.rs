@@ -57,14 +57,17 @@ fn try_bump_balls(ball: &mut Ball, other: &mut Ball) {
         other.x_vel = ((m2 - m1) * vx_other + 2.0 * m1 * vx_ball) / (m1 + m2);
         other.y_vel = ((m2 - m1) * vy_other + 2.0 * m1 * vy_ball) / (m1 + m2);
 
-        let overlap = 0.5 * (distance - ball.radius - other.radius);
+        let overlap = ball.radius + other.radius - distance;
         let dx = (ball.x_pos - other.x_pos) / distance;
         let dy = (ball.y_pos - other.y_pos) / distance;
 
-        ball.x_pos += overlap * dx;
-        ball.y_pos += overlap * dy;
-        other.x_pos -= overlap * dx;
-        other.y_pos -= overlap * dy;
+        let repulsion_strength = 0.5;
+        let repulsion_force = repulsion_strength * overlap;
+
+        ball.x_pos += repulsion_force * dx;
+        ball.y_pos += repulsion_force * dy;
+        other.x_pos -= repulsion_force * dx;
+        other.y_pos -= repulsion_force * dy;
     }
 }
 
