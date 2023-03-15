@@ -56,8 +56,18 @@ fn try_bump_balls(ball: &mut Ball, other: &mut Ball) {
         ball.y_vel = ((m1 - m2) * vy_ball + 2.0 * m2 * vy_other) / (m1 + m2);
         other.x_vel = ((m2 - m1) * vx_other + 2.0 * m1 * vx_ball) / (m1 + m2);
         other.y_vel = ((m2 - m1) * vy_other + 2.0 * m1 * vy_ball) / (m1 + m2);
+
+        let overlap = 0.5 * (distance - ball.radius - other.radius);
+        let dx = (ball.x_pos - other.x_pos) / distance;
+        let dy = (ball.y_pos - other.y_pos) / distance;
+
+        ball.x_pos += overlap * dx;
+        ball.y_pos += overlap * dy;
+        other.x_pos -= overlap * dx;
+        other.y_pos -= overlap * dy;
     }
 }
+
 fn try_bump_walls(ball: &mut Ball, window_width: f64, window_height: f64) {
     if ball.x_pos + ball.radius > window_width || ball.x_pos - ball.radius < 0.0 {
         ball.x_vel = -ball.x_vel;
